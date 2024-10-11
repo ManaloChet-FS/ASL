@@ -9,14 +9,14 @@ exports.GetAllContacts = (req, res) => {
   try {
     const filtered = filterContacts(req.get("X-Filter-By"), req.get("X-Filter-Operator"), req.get("X-Filter-Value"));
     const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
-    const pager = new Pager(sorted, req.query.page, req.query.size);
+    const pager = new Pager(sorted, req.query.page, req.query.limit);
     res.set("X-Page-Total", pager.total);
     res.set("X-Page-Next", pager.next());
     res.set("X-Page-Prev", pager.prev());
 
-    res.status(200).json({
-      contacts: pager.results()
-    })
+    const results = pager.results();
+
+    res.status(200).json(results)
   } catch (err) {
     switch (err.name) {
       case "InvalidEnumError":
@@ -40,9 +40,9 @@ exports.GetContactById = (req, res) => {
     }
 
     const contact = ContactModel.show(id);
-    res.status(200).json({
-      contact
-    })
+
+    console.log(contact.fname, contact.lname);
+    res.status(200).json(contact)
   } catch (err) {
       switch(err.name) {
         case "InvalidIDError":
@@ -57,10 +57,12 @@ exports.GetContactById = (req, res) => {
 
 exports.CreateContact = (req, res) => {
   const { fname, lname, email, phone, birthday } = req.body;
+  console.log(req.body);
   try {
     const newContact = ContactModel.create({fname, lname, email, phone, birthday});
-    res.status(303).redirect(`/contacts/${newContact.id}`)
+    res.status(303).redirect(303, `/v1/contacts/${newContact.id}`)
   } catch (err) {
+    console.log(err.name, err.message);
     switch (err.name) {
       case "InvalidContactFieldError":
       case "InvalidContactSchemaError":
@@ -84,7 +86,7 @@ exports.UpdateContact = (req, res) => {
     const { fname, lname, email, phone, birthday } = req.body;
     ContactModel.update(id, {fname, lname, email, phone, birthday})
 
-    res.status(303).redirect(`/contacts/${id}`);
+    res.status(303).redirect(303, `/v1/contacts/${id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidIDError":
@@ -110,7 +112,7 @@ exports.DeleteContact = (req, res) => {
     }
   
     ContactModel.remove(id);
-    res.status(303).redirect("/contacts");
+    res.status(303).redirect(303, "/contacts");
   } catch (err) {
     switch (err.name) {
       case "InvalidIDError":
