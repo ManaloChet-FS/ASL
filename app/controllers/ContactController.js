@@ -2,11 +2,10 @@ const {
   ContactModel,
   Pager,
   sortContacts,
-  filterContacts,
-  validateContactData
+  filterContacts
 } = require("@jworkman-fs/asl");
 
-exports.GetAllContacts = async (req, res) => {
+exports.GetAllContacts = (req, res) => {
   const filtered = filterContacts(req.get("X-Filter-By"), req.get("X-Filter-Operator"), req.get("X-Filter-Value"));
   const sorted = sortContacts(filtered, req.query.sort, req.query.direction);
   const pager = new Pager(sorted, req.query.page, req.query.size);
@@ -19,7 +18,7 @@ exports.GetAllContacts = async (req, res) => {
   })
 }
 
-exports.GetContactById = async (req, res) => {
+exports.GetContactById = (req, res) => {
   const { id } = req.params;
   const contact = ContactModel.show(id);
   res.status(200).json({
@@ -27,11 +26,11 @@ exports.GetContactById = async (req, res) => {
   })
 }
 
-exports.CreateContact = async (req, res) => {
+exports.CreateContact = (req, res) => {
   const { fname, lname, email, phone, birthday } = req.body;
   try {
-    validateContactData({fname, lname, email, phone, birthday});
     ContactModel.create({fname, lname, email, phone, birthday});
+    console.log(ContactModel.index());
     res.status(201).json({
       message: "Contact created!",
     })
@@ -43,10 +42,20 @@ exports.CreateContact = async (req, res) => {
   }
 }
 
-exports.UpdateContact = async (req, res) => {
+exports.UpdateContact = (req, res) => {
+  const { id } = req.params;
+  const { fname, lname, email, phone, birthday } = req.body;
+  ContactModel.update(id, {fname, lname, email, phone, birthday})
 
+  res.status(200).json({
+    message: "success!"
+  })
 }
 
-exports.DeleteContact = async (req, res) => {
-
+exports.DeleteContact = (req, res) => {
+  const { id } = req.params;
+  ContactModel.remove(id);
+  res.status(200).json({
+    message: "success!"
+  })
 }
