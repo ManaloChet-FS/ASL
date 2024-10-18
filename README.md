@@ -16,11 +16,14 @@ Endpoints:
   - POST
 
 - /galaxies/:id
+  - GET
   - PUT
   - DELETE
 - /stars/:id
+  - GET
   - PUT
   - DELETE
 - /planets/:id
+  - GET
   - PUT
   - DELETE
