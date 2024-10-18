@@ -12,6 +12,7 @@ const index = async (req, res) => {
       include: [
         {
           model: Star,
+          // Makes sure that the through table, StarsPlanets, doesn't get returned
           through: {
             attributes: []
           }
@@ -37,6 +38,7 @@ const show = async (req, res) => {
       include: [
         {
           model: Star,
+          // Makes sure that the through table, StarsPlanets, doesn't get returned
           through: {
             attributes: []
           }
@@ -70,6 +72,7 @@ const create = async (req, res) => {
 
     if (StarId) {
       const star = await Star.findByPk(StarId);
+      // Adds to the through table
       await star.addPlanet(planet);
     }
 

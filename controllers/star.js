@@ -12,6 +12,7 @@ const index = async (req, res) => {
       include: [
         {
           model: Planet,
+          // Makes sure that the through table, StarsPlanets, doesn't get returned
           through: {
             attributes: []
           }
@@ -38,6 +39,7 @@ const show = async (req, res) => {
       include: [
         {
           model: Planet,
+          // Makes sure that the through table, StarsPlanets, doesn't get returned
           through: {
             attributes: []
           }
@@ -71,6 +73,7 @@ const create = async (req, res) => {
 
     if (PlanetId) {
       const planet = await Planet.findByPk(PlanetId);
+      // Adds to the through table
       await planet.addStar(star);
     }
     // Issue a redirect with a success 2xx code
