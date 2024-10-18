@@ -4,7 +4,10 @@
     "password": "asl",
     "database": "wdv442_space_tracker",
     "host": "wdv442-mysql",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "define": {
+      "timestamps": false
+    }
   },
 
   "test": {
@@ -12,7 +15,10 @@
     "password": "asl",
     "database": "wdv442_space_tracker",
     "host": "wdv442-mysql",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "define": {
+      "timestamps": false
+    }
   },
 
   "production": {
@@ -20,6 +26,9 @@
     "password": "asl",
     "database": "wdv442_space_tracker",
     "host": "wdv442-mysql",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "define": {
+      "timestamps": false
+    }
   }
 }

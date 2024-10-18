@@ -1,4 +1,4 @@
-const { Planet } = require("../models");
+const { Planet, Star } = require("../models");
 const {
   validateId,
   validateResource,
@@ -8,7 +8,16 @@ const {
 // Show all resources
 const index = async (req, res) => {
   try {
-    const planets = await Planet.findAll();
+    const planets = await Planet.findAll({
+      include: [
+        {
+          model: Star,
+          through: {
+            attributes: []
+          }
+        }
+      ]
+    });
     // Respond with an array and 2xx status code
     res.status(200).json(planets);
   } catch (err) {
@@ -24,7 +33,17 @@ const show = async (req, res) => {
     const { id } = req.params;
     validateId(id);
 
-    const planet = await Planet.findOne({ where: { id } })
+    const planet = await Planet.findByPk(id, {
+      include: [
+        {
+          model: Star,
+          through: {
+            attributes: []
+          }
+        }
+      ]
+    })
+
     validateResource(id, planet);
 
     // Respond with a single object and 2xx code
@@ -44,10 +63,16 @@ const show = async (req, res) => {
 // Create a new resource
 const create = async (req, res) => {
   try {
-    const { name, size, description } = req.body;
+    const { name, size, description, StarId } = req.body;
     validateInput(name, size, description);
 
-    await Planet.create({ name, size, description });
+    const planet = await Planet.create({ name, size, description, StarId });
+
+    if (StarId) {
+      const star = await Star.findByPk(StarId);
+      await star.addPlanet(planet);
+    }
+
     // Issue a redirect with a success 2xx code
     res.redirect(201, `/planets`)
   } catch (err) {
@@ -66,10 +91,10 @@ const update = async (req, res) => {
     const { id } = req.params;
     validateId(id);
   
-    const { name, size, description } = req.body;
+    const { name, size, description, StarId } = req.body;
     validateInput(name, size, description);
   
-    const planet = await Planet.update({ name, size, description }, { where: { id } });
+    const planet = await Planet.update({ name, size, description, StarId }, { where: { id } });
     // Respond with a single resource and 2xx code
     res.status(200).json(`/planets/${req.params.id}`);
   } catch (err) {

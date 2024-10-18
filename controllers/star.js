@@ -1,4 +1,4 @@
-const { Star } = require("../models");
+const { Star, Planet, Galaxy } = require("../models");
 const {
   validateId,
   validateResource,
@@ -8,7 +8,17 @@ const {
 // Show all resources
 const index = async (req, res) => {
   try {
-    const stars = await Star.findAll();
+    const stars = await Star.findAll({
+      include: [
+        {
+          model: Planet,
+          through: {
+            attributes: []
+          }
+        },
+        Galaxy
+      ]
+    });
     // Respond with an array and 2xx status code
     res.status(200).json(stars);
   } catch (err) {
@@ -24,7 +34,17 @@ const show = async (req, res) => {
     const { id } = req.params;
     validateId(id);
 
-    const star = await Star.findOne({ where: { id } })
+    const star = await Star.findByPk(id, {
+      include: [
+        {
+          model: Planet,
+          through: {
+            attributes: []
+          }
+        },
+        Galaxy
+      ]
+    })
     validateResource(id, star);
 
     // Respond with a single object and 2xx code
@@ -44,10 +64,15 @@ const show = async (req, res) => {
 // Create a new resource
 const create = async (req, res) => {
   try {
-    const { name, size, description } = req.body;
+    const { name, size, description, GalaxyId, PlanetId } = req.body;
     validateInput(name, size, description);
 
-    await Star.create({ name, size, description });
+    const star = await Star.create({ name, size, description, GalaxyId, PlanetId });
+
+    if (PlanetId) {
+      const planet = await Planet.findByPk(PlanetId);
+      await planet.addStar(star);
+    }
     // Issue a redirect with a success 2xx code
     res.redirect(201, `/stars`)
   } catch (err) {
@@ -66,12 +91,12 @@ const update = async (req, res) => {
     const { id } = req.params;
     validateId(id);
   
-    const { name, size, description } = req.body;
+    const { name, size, description, GalaxyId, PlanetId } = req.body;
     validateInput(name, size, description);
   
-    const star = await Star.update({ name, size, description }, { where: { id } });
+    await Star.update({ name, size, description, GalaxyId, PlanetId }, { where: { id } });
     // Respond with a single resource and 2xx code
-    res.status(200).json(`/stars/${req.params.id}`, star)
+    res.status(200).json(`/stars/${req.params.id}`)
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":

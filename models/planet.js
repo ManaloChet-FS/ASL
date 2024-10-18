@@ -10,13 +10,19 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      models.Planet.belongsToMany(models.Star, { through: 'StarsPlanets' })
+      models.Planet.belongsToMany(models.Star, {
+        through: { 
+          model: 'StarsPlanets',
+          attributes: []
+        }
+      })
     }
   }
   Planet.init({
     name: DataTypes.STRING,
     size: DataTypes.INTEGER,
-    description: DataTypes.TEXT
+    description: DataTypes.TEXT,
+    StarId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Planet',

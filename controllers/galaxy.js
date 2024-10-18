@@ -1,4 +1,4 @@
-const { Galaxy } = require("../models");
+const { Galaxy, Star } = require("../models");
 const {
   validateId,
   validateResource,
@@ -8,7 +8,9 @@ const {
 // Show all resources
 const index = async (req, res) => {
   try {
-    const galaxies = await Galaxy.findAll();
+    const galaxies = await Galaxy.findAll({
+      include: Star
+    });
     // Respond with an array and 2xx status code
     res.status(200).json(galaxies);
   } catch (err) {
@@ -24,7 +26,9 @@ const show = async (req, res) => {
     const { id } = req.params;
     validateId(id);
 
-    const galaxy = await Galaxy.findOne({ where: { id } })
+    const galaxy = await Galaxy.findByPk(id, {
+      include: Star
+    })
     validateResource(id, galaxy);
 
     // Respond with a single object and 2xx code
