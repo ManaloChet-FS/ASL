@@ -75,7 +75,7 @@ const update = async (req, res) => {
   
     const galaxy = await Galaxy.update({ name, size, description }, { where: { id } });
     // Respond with a single resource and 2xx code
-    res.status(200).json(`/galaxies/${req.params.id}`, galaxy)
+    res.status(200).json(`/galaxies/${req.params.id}`)
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
