@@ -1,0 +1,7 @@
+<h1>Edit {{ star.name }}</h1>
+
+{% block pageName %}Edit {{ star.name }}{% endblock %}
+
+{% block main %}
+  {% include "stars/_form.twig" with { "star": star } %}
+{% endblock %}

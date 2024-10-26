@@ -1,26 +1,29 @@
 const { Planet, Star } = require("../models");
+const fs = require('fs');
+const path = require('path');
 const {
-  validateId,
-  validateResource,
-  validateInput
+  validateId
 } = require("../utils/validateData");
 
 // Show all resources
 const index = async (req, res) => {
   try {
+    const contentType = req.get('Content-Type');
     const planets = await Planet.findAll({
-      include: [
-        {
-          model: Star,
-          // Makes sure that the through table, StarsPlanets, doesn't get returned
-          through: {
-            attributes: []
-          }
+      include: [{
+        model: Star,
+        through: {
+          attributes: []
         }
-      ]
+      }],
     });
-    // Respond with an array and 2xx status code
-    res.status(200).json(planets);
+
+    // Checks if curl is being used to make the request
+    if (contentType === "application/json") {
+      return res.status(200).json(planets);
+    }
+
+    res.render('planets/index.twig', { planets });
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -31,25 +34,23 @@ const index = async (req, res) => {
 // Show resource
 const show = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
+    validateId(req.params.id);
 
-    const planet = await Planet.findByPk(id, {
-      include: [
-        {
-          model: Star,
-          // Makes sure that the through table, StarsPlanets, doesn't get returned
-          through: {
-            attributes: []
-          }
+    const userAgent = req.get('user-agent');
+    const planet = await Planet.findByPk(req.params.id, {
+      include: [{
+        model: Star,
+        through: {
+          attributes: []
         }
-      ]
-    })
+      }]
+    });
 
-    validateResource(id, planet);
+    if (userAgent.includes('curl')) {
+      return res.status(200).json(planet);
+    }
 
-    // Respond with a single object and 2xx code
-    res.status(200).json(planet)
+    res.render("planets/show.twig", { planet });
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -65,19 +66,28 @@ const show = async (req, res) => {
 // Create a new resource
 const create = async (req, res) => {
   try {
-    const { name, size, description, StarId } = req.body;
-    validateInput(name, size, description);
+    let imagePath = null;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
 
-    const planet = await Planet.create({ name, size, description, StarId });
+      await image.mv(uploadPath);
 
-    if (StarId) {
-      const star = await Star.findByPk(StarId);
-      // Adds to the through table
-      await star.addPlanet(planet);
+      imagePath = `/images/${image.name}`;
     }
 
-    // Issue a redirect with a success 2xx code
-    res.redirect(201, `/planets`)
+    if (req.body.StarId === "") {
+      req.body.StarId = null;
+    }
+
+    const planet = await Planet.create({...req.body, image: imagePath});
+
+    if (req.body.StarId) {
+      const star = await Star.findByPk(req.body.StarId);
+      await star.addPlanet(planet.id);
+    }
+
+    res.redirect(302, `/planets/${planet.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -91,15 +101,43 @@ const create = async (req, res) => {
 // Update an existing resource
 const update = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
-  
-    const { name, size, description, StarId } = req.body;
-    validateInput(name, size, description);
-  
-    const planet = await Planet.update({ name, size, description, StarId }, { where: { id } });
-    // Respond with a single resource and 2xx code
-    res.status(200).json(`/planets/${req.params.id}`);
+    validateId(req.params.id);
+    const planet = await Planet.findByPk(req.params.id);
+    const previousStar = planet.StarId;
+
+    let imagePath = planet.image;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
+
+      if (planet.image) {
+        const oldImage = path.join('public', planet.image);
+        if (fs.existsSync(oldImage)) {
+          fs.unlinkSync(oldImage);
+        }
+      }
+
+      await image.mv(uploadPath);
+
+      imagePath = `/images/${image.name}`;
+    }
+
+    if (req.body.StarId === "") {
+      req.body.StarId = null;
+    }
+
+    await Planet.update({...req.body, image: imagePath}, { where: { id: req.params.id } });
+
+    if (req.body.StarId !== null) {
+      const star = await Star.findByPk(req.body.StarId);
+      await star.addPlanet(planet.id);
+    } else {
+      const star = await Star.findByPk(previousStar);
+      if (star) {
+        await star.removePlanet(planet.id);
+      }
+    }
+    res.redirect(302, `/planets/${req.params.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -119,11 +157,24 @@ const remove = async (req, res) => {
     const { id } = req.params;
     validateId(id);
   
-    const planet = await Planet.destroy({ where: { id } });
-    validateResource(planet);
-  
-    // Respond with a 2xx status code and bool
-    res.status(204).json(true)
+    const planet = await Planet.findByPk(id);
+
+    if (planet.image) {
+      const image = path.join('public', planet.image);
+      if (fs.existsSync(image)) {
+        fs.unlinkSync(image);
+      }
+    }
+
+    const stars = await Star.findAll({ where: { PlanetId: id } });
+
+    for (const star of stars) {
+      await star.update({ PlanetId: null });
+    }
+
+    await planet.destroy();
+
+    res.redirect(302, '/planets')
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -136,5 +187,17 @@ const remove = async (req, res) => {
   }
 }
 
+const form = async (req, res) => {
+  const stars = await Star.findAll({
+    attributes: ['id', 'name']
+  });
+  if (req.params.id) {
+    const planet = await Planet.findByPk(req.params.id);
+    res.render('planets/_form.twig', { planet, stars });
+  } else {
+    res.render('planets/_form.twig', { stars });
+  }
+}
+
 // Export all controller actions
-module.exports = { index, show, create, update, remove }
+module.exports = { index, show, create, update, remove, form }

@@ -1,0 +1,32 @@
+{% extends "layouts/_default.twig" %}
+
+{% block main %}
+<div class="card">
+	<div class="card-header">
+		<h1>{{ star.name }}</h1>
+		<p>Size:{{ star.size }}</p>
+	</div>
+	{% if star.image %}
+		<img src="{{ star.image }}" alt="{{ star.name }}">
+	{% endif %}
+	<p>{{ star.description }}</p>
+	{% if star.Galaxy %}
+		<p>Galaxy: <a href="/galaxies/{{star.Galaxy.id}}">{{star.Galaxy.name}}</a></p>
+	{% endif %}
+	{% if star.Planets %}
+		<p>Planets:</p>
+		<ul>
+			{% for planet in star.Planets %}
+				<li><a href="/planets/{{planet.id}}">{{planet.name}}</a></li>
+			{% endfor %}
+		</ul>
+	{% endif %}
+	<div class="card-links">
+		<div>
+			<a href="/stars">&laquo; Back</a>
+			<a href="/stars/{{ star.id }}/edit">Edit</a>
+		</div>
+		<a class="delete" href="/stars/{{ star.id }}/delete">Delete</a>
+	</div>
+</div>
+{% endblock %}

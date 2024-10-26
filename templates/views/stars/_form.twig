@@ -1,0 +1,85 @@
+{% extends "layouts/_default.twig" %}
+
+{% block main %}
+  {% if star is defined %}
+    <form action="/stars/{{ star.id }}" method="POST" encType="multipart/form-data">
+      <input type="hidden" name="id" value="{{ star.id }}" />
+  {% else %}
+    <form action="/stars" method="POST" encType="multipart/form-data">
+  {% endif %}
+
+  <div class="control">
+    <label>Name:</label>
+    <input 
+      type="text" 
+      name="name" 
+      {% if star is defined %}
+      value="{{ star.name }}"
+      {% endif %}
+      autocomplete="off"
+    />
+  </div>
+  <div class="control">
+    <label>Size:</label>
+    <input 
+      type="text" 
+      name="size" 
+      {% if star is defined %}
+      value="{{ star.size }}"
+      {% endif %}
+      autocomplete="off"
+    />
+  </div>
+  <div class="control">
+    <label>Description:</label>
+    <textarea name="description">{{ star.description }}</textarea>
+  </div>
+  <div class="row">
+    <div class="control">
+      <label>Galaxy:</label>
+      <select name="GalaxyId" id="GalaxyId">
+        <option value="">None</option> 
+      {% for galaxy in galaxies %}
+        {% if star.GalaxyId == galaxy.id %}
+          <option value="{{ galaxy.id }}" selected>{{ galaxy.name }}</option>
+          {% else %}
+          <option value="{{ galaxy.id }}">{{ galaxy.name }}</option>  
+        {% endif %}
+      {% endfor %}
+      </select>
+    </div>
+    <div class="control">
+      <label>Planet:</label>
+      <select name="PlanetId" id="PlanetId"> 
+        <option value="">None</option> 
+      {% for planet in planets %}
+        {% if star.PlanetId == planet.id %}
+          <option value="{{ planet.id }}" selected>{{ planet.name }}</option>
+          {% else %}
+          <option value="{{ planet.id }}">{{ planet.name }}</option>  
+        {% endif %}
+      {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="control">
+    {% if star.image %}
+      <label>Edit Image:</label>
+      <img src="{{ star.image }}" alt="{{ star.name }}" />
+    {% else %}
+      <label>Upload Image:</label>    
+    {% endif %}
+    <input type="file" name="image" id="image">
+  </div>
+
+  <button type="submit">
+  {% if star is defined %}
+  Update
+  {% else %}
+  Create
+  {% endif %}
+  Star
+  </button>
+
+  </form>
+{% endblock %}

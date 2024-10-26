@@ -1,18 +1,24 @@
 const { Galaxy, Star } = require("../models");
+const fs = require('fs');
+const path = require('path');
 const {
-  validateId,
-  validateResource,
-  validateInput
+  validateId
 } = require("../utils/validateData");
 
 // Show all resources
 const index = async (req, res) => {
   try {
+    const contentType = req.get('Content-Type');
     const galaxies = await Galaxy.findAll({
       include: Star
     });
-    // Respond with an array and 2xx status code
-    res.status(200).json(galaxies);
+
+    // Checks if curl is being used to make the request
+    if (contentType === "application/json") {
+      return res.status(200).json(galaxies);
+    }
+
+    res.render('galaxies/index.twig', { galaxies });
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -23,16 +29,18 @@ const index = async (req, res) => {
 // Show resource
 const show = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
+    validateId(req.params.id);
 
-    const galaxy = await Galaxy.findByPk(id, {
+    const userAgent = req.get('user-agent');
+    const galaxy = await Galaxy.findByPk(req.params.id, {
       include: Star
-    })
-    validateResource(id, galaxy);
+    });
 
-    // Respond with a single object and 2xx code
-    res.status(200).json(galaxy)
+    if (userAgent.includes('curl')) {
+      return res.status(200).json(galaxy);
+    }
+
+    res.render("galaxies/show.twig", { galaxy });
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -48,12 +56,18 @@ const show = async (req, res) => {
 // Create a new resource
 const create = async (req, res) => {
   try {
-    const { name, size, description } = req.body;
-    validateInput(name, size, description);
+    let imagePath = null;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
 
-    await Galaxy.create({ name, size, description });
-    // Issue a redirect with a success 2xx code
-    res.redirect(201, `/galaxies`)
+      await image.mv(uploadPath);
+
+      imagePath = `/images/${image.name}`;
+    }
+
+    const galaxy = await Galaxy.create({...req.body, image: imagePath});
+    res.redirect(302, `/galaxies/${galaxy.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -64,18 +78,30 @@ const create = async (req, res) => {
   }
 }
 
-// Update an existing resource
 const update = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
-  
-    const { name, size, description } = req.body;
-    validateInput(name, size, description);
-  
-    const galaxy = await Galaxy.update({ name, size, description }, { where: { id } });
-    // Respond with a single resource and 2xx code
-    res.status(200).json(`/galaxies/${req.params.id}`)
+    validateId(req.params.id);
+    const galaxy = await Galaxy.findByPk(req.params.id);
+
+    let imagePath = galaxy.image;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
+
+      if (galaxy.image) {
+        const oldImage = path.join('public', galaxy.image);
+        if (fs.existsSync(oldImage)) {
+          fs.unlinkSync(oldImage);
+        }
+      }
+
+      await image.mv(uploadPath);
+
+      imagePath = `/images/${image.name}`;
+    }
+
+    await Galaxy.update({...req.body, image: imagePath}, { where: { id: req.params.id } });
+    res.redirect(302, `/galaxies/${req.params.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -95,11 +121,24 @@ const remove = async (req, res) => {
     const { id } = req.params;
     validateId(id);
   
-    const galaxy = await Galaxy.destroy({ where: { id } });
-    validateResource(galaxy);
+    const galaxy = await Galaxy.findByPk(id);
+
+    if (galaxy.image) {
+      const image = path.join('public', galaxy.image);
+      if (fs.existsSync(image)) {
+        fs.unlinkSync(image);
+      }
+    }
+
+    const stars = await Star.findAll({ where: { GalaxyId: id } });
+
+    for (const star of stars) {
+      await star.update({ GalaxyId: null });
+    }
+
+    await galaxy.destroy();
   
-    // Respond with a 2xx status code and bool
-    res.status(204).json(true)
+    res.redirect(302, '/galaxies');
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -112,5 +151,14 @@ const remove = async (req, res) => {
   }
 }
 
+const form = async (req, res) => {
+  if (req.params.id) {
+    const galaxy = await Galaxy.findByPk(req.params.id);
+    res.render('galaxies/_form.twig', { galaxy });
+  } else {
+    res.render('galaxies/_form.twig');
+  }
+}
+
 // Export all controller actions
-module.exports = { index, show, create, update, remove }
+module.exports = { index, show, create, update, remove, form }

@@ -1,0 +1,30 @@
+{% extends "layouts/_default.twig" %}
+
+{% block pageName %}All Planets{% endblock %}
+
+{% block main %}
+  <h1>All Planets</h1>
+  <div class="container">
+  {% for planet in planets %}
+    <div class="card">
+      <div class="card-header">
+        <p>{{ planet.name }}</p>
+        <p>Size: {{ planet.size }}</p>
+      </div>
+      {% if planet.image %}
+		    <img src="{{ planet.image }}" alt="{{ planet.name }}">
+	    {% endif %}
+      <p>{{ planet.description }}</p>
+      <div class="card-links">
+        <div>
+          <a href="/planets/{{ planet.id }}">Show</a>
+          <a href="/planets/{{ planet.id }}/edit">Edit</a>
+        </div>
+        <a class="delete" href="/planets/{{ planet.id }}/delete">Delete</a>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  <a class="create" href="/planets/new">Create new planet</a>
+{% endblock %}

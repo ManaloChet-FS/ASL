@@ -1,0 +1,30 @@
+{% extends "layouts/_default.twig" %}
+
+{% block pageName %}All Stars{% endblock %}
+
+{% block main %}
+  <h1>All Stars</h1>
+  <div class="container">
+  {% for star in stars %}
+    <div class="card">
+      <div class="card-header">
+        <p>{{ star.name }}</p>
+        <p>Size: {{ star.size }}</p>
+      </div>
+      {% if star.image %}
+		    <img src="{{ star.image }}" alt="{{ star.name }}">
+	    {% endif %}
+      <p>{{ star.description }}</p>
+      <div class="card-links">
+        <div>
+          <a href="/stars/{{ star.id }}">Show</a>
+          <a href="/stars/{{ star.id }}/edit">Edit</a>
+        </div>
+        <a class="delete" href="/stars/{{ star.id }}/delete">Delete</a>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  <a class="create" href="/stars/new">Create new star</a>
+{% endblock %}

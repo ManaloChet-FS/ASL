@@ -1,27 +1,29 @@
 const { Star, Planet, Galaxy } = require("../models");
+const fs = require('fs');
+const path = require('path');
 const {
-  validateId,
-  validateResource,
-  validateInput
+  validateId
 } = require("../utils/validateData");
 
 // Show all resources
 const index = async (req, res) => {
   try {
+    const contentType = req.get('Content-Type');
     const stars = await Star.findAll({
-      include: [
-        {
-          model: Planet,
-          // Makes sure that the through table, StarsPlanets, doesn't get returned
-          through: {
-            attributes: []
-          }
+      include: [{
+        model: Planet,
+        through: {
+          attributes: []
         },
         Galaxy
-      ]
+    }]
     });
-    // Respond with an array and 2xx status code
-    res.status(200).json(stars);
+
+    if (contentType === "application/json") {
+      return res.status(200).json(stars);
+    }
+
+    res.render('stars/index.twig', { stars });
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -32,25 +34,29 @@ const index = async (req, res) => {
 // Show resource
 const show = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
+    validateId(req.params.id);
 
-    const star = await Star.findByPk(id, {
+    const userAgent = req.get('user-agent');
+    const star = await Star.findByPk(req.params.id, {
       include: [
-        {
-          model: Planet,
-          // Makes sure that the through table, StarsPlanets, doesn't get returned
-          through: {
-            attributes: []
-          }
-        },
-        Galaxy
-      ]
-    })
-    validateResource(id, star);
+      {
+        model: Planet,
+        through: {
+          attributes: []
+        }
+      },
+      {
+        model: Galaxy,
+        required: false
+      }
+    ]
+    });
 
-    // Respond with a single object and 2xx code
-    res.status(200).json(star)
+    if (userAgent.includes('curl')) {
+      return res.status(200).json(star);
+    }
+
+    res.render("stars/show.twig", { star });
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -66,18 +72,28 @@ const show = async (req, res) => {
 // Create a new resource
 const create = async (req, res) => {
   try {
-    const { name, size, description, GalaxyId, PlanetId } = req.body;
-    validateInput(name, size, description);
+    let imagePath = null;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
 
-    const star = await Star.create({ name, size, description, GalaxyId, PlanetId });
+      await image.mv(uploadPath);
 
-    if (PlanetId) {
-      const planet = await Planet.findByPk(PlanetId);
-      // Adds to the through table
-      await planet.addStar(star);
+      imagePath = `/images/${image.name}`;
     }
-    // Issue a redirect with a success 2xx code
-    res.redirect(201, `/stars`)
+
+    if (req.body.PlanetId === "") {
+      req.body.PlanetId = null;
+    }
+
+    const star = await Star.create({...req.body, image: imagePath});
+
+    if (req.body.PlanetId) {
+      const planet = await Planet.findByPk(req.body.PlanetId);
+      await planet.addStar(star.id);
+    }
+
+    res.redirect(302, `/stars/${star.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -91,15 +107,48 @@ const create = async (req, res) => {
 // Update an existing resource
 const update = async (req, res) => {
   try {
-    const { id } = req.params;
-    validateId(id);
-  
-    const { name, size, description, GalaxyId, PlanetId } = req.body;
-    validateInput(name, size, description);
-  
-    await Star.update({ name, size, description, GalaxyId, PlanetId }, { where: { id } });
-    // Respond with a single resource and 2xx code
-    res.status(200).json(`/stars/${req.params.id}`)
+    validateId(req.params.id);
+    const star = await Star.findByPk(req.params.id);
+    const previousPlanet = star.PlanetId;
+
+    let imagePath = star.image;
+    if (req.files && req.files.image) {
+      const image = req.files.image;
+      const uploadPath = path.join('public', 'images', image.name);
+
+      if (star.image) {
+        const oldImage = path.join('public', star.image);
+        if (fs.existsSync(oldImage)) {
+          fs.unlinkSync(oldImage);
+        }
+      }
+
+      await image.mv(uploadPath);
+
+      imagePath = `/images/${image.name}`;
+    }
+
+    if (req.body.GalaxyId === "") {
+      req.body.GalaxyId = null;
+    }
+
+    if (req.body.PlanetId === "") {
+      req.body.PlanetId = null;
+    }
+
+    await Star.update({...req.body, image: imagePath}, { where: { id: req.params.id } });
+
+    if (req.body.PlanetId !== null) {
+      const planet = await Planet.findByPk(req.body.PlanetId);
+      await planet.addStar(star.id);
+    } else {
+      const planet = await Planet.findByPk(previousPlanet);
+      if (planet) {
+        await planet.removeStar(star.id);
+      }
+    }
+
+    res.redirect(302, `/stars/${req.params.id}`);
   } catch (err) {
     switch (err.name) {
       case "InvalidInputError":
@@ -119,11 +168,24 @@ const remove = async (req, res) => {
     const { id } = req.params;
     validateId(id);
   
-    const star = await Star.destroy({ where: { id } });
-    validateResource(star);
+    const star = await Star.findByPk(id);
+
+    if (star.image) {
+      const image = path.join('public', star.image);
+      if (fs.existsSync(image)) {
+        fs.unlinkSync(image);
+      }
+    }
+
+    const planets = await Planet.findAll({ where: { StarId: id } });
+
+    for (const planet of planets) {
+      await planet.update({ StarId: null });
+    }
+
+    await star.destroy();
   
-    // Respond with a 2xx status code and bool
-    res.status(204).json(true)
+    res.redirect(302, '/stars')
   } catch (err) {
     switch (err.name) {
       case "InvalidIdError":
@@ -136,5 +198,20 @@ const remove = async (req, res) => {
   }
 }
 
+const form = async (req, res) => {
+  const galaxies = await Galaxy.findAll({
+    attributes: ['id', 'name']
+  });
+  const planets = await Planet.findAll({
+    attributes: ['id', 'name']
+  });
+  if (req.params.id) {
+    const star = await Star.findByPk(req.params.id);
+    res.render('stars/_form.twig', { star, galaxies, planets });
+  } else {
+    res.render('stars/_form.twig', { galaxies, planets });
+  }
+}
+
 // Export all controller actions
-module.exports = { index, show, create, update, remove }
+module.exports = { index, show, create, update, remove, form }

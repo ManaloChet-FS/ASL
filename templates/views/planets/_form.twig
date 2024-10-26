@@ -1,0 +1,71 @@
+{% extends "layouts/_default.twig" %}
+
+{% block main %}
+  {% if planet is defined %}
+    <form action="/planets/{{ planet.id }}" method="POST" encType="multipart/form-data">
+      <input type="hidden" name="id" value="{{ planet.id }}" />
+      <h1>Edit planet</h1>
+  {% else %}
+    <form action="/planets" method="POST" encType="multipart/form-data">
+    <h1>Create planet</h1>
+  {% endif %}
+
+  <div class="control">
+    <label>Name:</label>
+    <input 
+      type="text" 
+      name="name" 
+      {% if planet is defined %}
+      value="{{ planet.name }}"
+      {% endif %}
+      autocomplete="off"
+    />
+  </div>
+  <div class="control">
+    <label>Size:</label>
+    <input 
+      type="text" 
+      name="size" 
+      {% if planet is defined %}
+      value="{{ planet.size }}"
+      {% endif %}
+      autocomplete="off"
+    />
+  </div>
+  <div class="control">
+    <label>Description:</label>
+    <textarea name="description">{{ planet.description }}</textarea>
+  </div>
+  <div class="control">
+    <label>Star:</label>
+    <select name="StarId" id="StarId"> 
+      <option value="">None</option> 
+    {% for star in stars %}
+      {% if planet.StarId == star.id %}
+        <option value="{{ star.id }}" selected>{{ star.name }}</option>
+        {% else %}
+        <option value="{{ star.id }}">{{ star.name }}</option>  
+      {% endif %}
+    {% endfor %}
+    </select>
+  </div>
+  <div class="control">
+    {% if planet.image %}
+      <label>Edit Image:</label>
+      <img src="{{ planet.image }}" alt="{{ planet.name }}" />
+    {% else %}
+      <label>Upload Image:</label>    
+    {% endif %}
+    <input type="file" name="image" id="image">
+  </div>
+
+  <button type="submit">
+  {% if planet is defined %}
+  Update
+  {% else %}
+  Create
+  {% endif %}
+  Planet
+  </button>
+  </form>
+{% endblock %}

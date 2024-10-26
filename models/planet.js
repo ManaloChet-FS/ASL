@@ -11,18 +11,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       models.Planet.belongsToMany(models.Star, {
-        through: { 
-          model: 'StarsPlanets',
-          attributes: []
-        }
-      })
+        through: 'StarsPlanets', foreignKey: 'PlanetId'
+      });
     }
   }
   Planet.init({
     name: DataTypes.STRING,
     size: DataTypes.INTEGER,
     description: DataTypes.TEXT,
-    StarId: DataTypes.INTEGER
+    StarId: DataTypes.INTEGER,
+    image: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Planet',

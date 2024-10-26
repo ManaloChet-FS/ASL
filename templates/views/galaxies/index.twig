@@ -1,0 +1,30 @@
+{% extends "layouts/_default.twig" %}
+
+{% block pageName %}All Galaxies{% endblock %}
+
+{% block main %}
+  <h1>All Galaxies</h1>
+  <div class="container">
+  {% for galaxy in galaxies %}
+    <div class="card">
+      <div class="card-header">
+        <p>{{ galaxy.name }}</p>
+        <p>Size: {{ galaxy.size }}</p>
+      </div>
+      {% if galaxy.image %}
+		    <img src="{{ galaxy.image }}" alt="{{ galaxy.name }}">
+	    {% endif %}
+      <p>{{ galaxy.description }}</p>
+      <div class="card-links">
+        <div>
+          <a href="/galaxies/{{ galaxy.id }}">Show</a>
+          <a href="/galaxies/{{ galaxy.id }}/edit">Edit</a>
+        </div>
+        <a class="delete" href="/galaxies/{{ galaxy.id }}/delete">Delete</a>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  <a class="create" href="/galaxies/new">Create new galaxy</a>
+{% endblock %}

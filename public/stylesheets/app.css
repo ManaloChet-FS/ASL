@@ -1,0 +1,191 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f4f4f4;
+  color: #222;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 1rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+header h1 a {
+  color: #222;
+  text-decoration: none;
+}
+
+nav ul {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+}
+
+nav ul li a {
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  font-weight: bold;
+  color: #222;
+  transition: all 150ms;
+  font-size: 1.5rem;
+}
+
+nav ul li a:hover {
+  border-color: #222;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100svh;
+}
+
+main h1 {
+  margin-bottom: 0.5rem;
+}
+
+#welcome {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #222;
+  color: #f4f4f4;
+  padding: 1.5rem;
+  border-radius: 10px;
+}
+
+#welcome h1 {
+  margin: 0;
+}
+
+#welcome img {
+  width: 75px;
+  height: 75px;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  min-width: 300px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Description */
+.card > p {
+  padding: 0.8rem 0;
+}
+
+.card a {
+  text-decoration: none;
+  color: blue;
+  border-bottom: 2px solid transparent;
+  transition: all 150ms;
+  margin-right: 0.5rem;
+}
+
+.card ul {
+  display: flex;
+  align-items: center;
+  list-style-position: inside;
+  margin: 0.2rem 0 0.4rem 0;
+}
+
+.card ul li:nth-child(1) {
+  list-style: none;
+}
+
+.card-links {
+  display: flex;
+  justify-content: space-between;
+  border-top: 2px solid rgba(2,2,2,0.9);
+  padding: 1rem 0.5rem 0 0.5rem;
+}
+
+.card a:hover {
+  border-color: blue;
+}
+
+.delete {
+  color: red !important;
+}
+
+.delete:hover {
+  border-color: red !important;
+}
+
+img {
+  width: 300px;
+  height: 175px;
+}
+
+.create {
+  margin-top: 1rem;
+  color: #222;
+}
+
+.create:hover {
+  color: #333;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+}
+
+.control label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.control input, .control textarea {
+  width: 100%;
+  padding: 0.2rem;
+}
+
+select, button {
+  padding: 0.5rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+input[type="file"] {
+  display: block;
+}
+
+button {
+  cursor: pointer;
+}
