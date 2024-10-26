@@ -14,6 +14,7 @@
 		<div>
 			<p>Stars:</p>
 			<ul>
+			{# Lists all the stars associated with the planet #}
 				{% for star in planet.Stars %}
 					<li><a href="/stars/{{star.id}}">{{star.name}}</a></li>
 				{% endfor %}

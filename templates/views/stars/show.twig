@@ -16,6 +16,7 @@
 	{% if star.Planets %}
 		<p>Planets:</p>
 		<ul>
+		{# Lists all the planets associated with the star #}
 			{% for planet in star.Planets %}
 				<li><a href="/planets/{{planet.id}}">{{planet.name}}</a></li>
 			{% endfor %}

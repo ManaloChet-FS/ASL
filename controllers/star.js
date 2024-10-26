@@ -8,6 +8,7 @@ const {
 // Show all resources
 const index = async (req, res) => {
   try {
+    // Grabs the Content-Type header
     const contentType = req.get('Content-Type');
     const stars = await Star.findAll({
       include: [{
@@ -19,6 +20,7 @@ const index = async (req, res) => {
     }]
     });
 
+    // Checks if Content-Type is application/json
     if (contentType === "application/json") {
       return res.status(200).json(stars);
     }
@@ -73,16 +75,22 @@ const show = async (req, res) => {
 const create = async (req, res) => {
   try {
     let imagePath = null;
+
+    // Checks if an image is being uploaded
     if (req.files && req.files.image) {
       const image = req.files.image;
       const uploadPath = path.join('public', 'images', image.name);
 
+      // Moves the image into the /public/images folder
       await image.mv(uploadPath);
 
+      // The path that the img tag will use to access the image
       imagePath = `/images/${image.name}`;
     }
 
+    // Checks if "none" is selected on form
     if (req.body.PlanetId === "") {
+      // An empty string is not accepted for PlanetId so needs to be changed to null
       req.body.PlanetId = null;
     }
 
@@ -116,9 +124,12 @@ const update = async (req, res) => {
       const image = req.files.image;
       const uploadPath = path.join('public', 'images', image.name);
 
+      // Checks if the star has an image already
       if (star.image) {
         const oldImage = path.join('public', star.image);
+        // Checks if the old image still exists
         if (fs.existsSync(oldImage)) {
+          // Deletes the old image
           fs.unlinkSync(oldImage);
         }
       }

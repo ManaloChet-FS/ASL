@@ -13,6 +13,7 @@
 	{% if galaxy.Stars.length >= 1 %}
 		<p>Stars:</p>
 		<ul>
+		{# Lists all the stars associated with the galaxy #}
 			{% for star in galaxy.Stars %}
 				<li><a href="/stars/{{ star.id }}">{{star.name}}</a></li>
 			{% endfor %}

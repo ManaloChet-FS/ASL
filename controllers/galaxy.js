@@ -8,12 +8,13 @@ const {
 // Show all resources
 const index = async (req, res) => {
   try {
+    // Grabs the Content-Type header
     const contentType = req.get('Content-Type');
     const galaxies = await Galaxy.findAll({
       include: Star
     });
 
-    // Checks if curl is being used to make the request
+    // Checks if Content-Type is application/json
     if (contentType === "application/json") {
       return res.status(200).json(galaxies);
     }
@@ -57,12 +58,16 @@ const show = async (req, res) => {
 const create = async (req, res) => {
   try {
     let imagePath = null;
+
+    // Checks if an image is being uploaded
     if (req.files && req.files.image) {
       const image = req.files.image;
       const uploadPath = path.join('public', 'images', image.name);
 
+      // Moves the image into the /public/images folder
       await image.mv(uploadPath);
 
+      // The path that the img tag will use to access the image
       imagePath = `/images/${image.name}`;
     }
 
@@ -88,9 +93,12 @@ const update = async (req, res) => {
       const image = req.files.image;
       const uploadPath = path.join('public', 'images', image.name);
 
+      // Checks if the galaxy has an image already
       if (galaxy.image) {
         const oldImage = path.join('public', galaxy.image);
+        // Checks if the old image still exists
         if (fs.existsSync(oldImage)) {
+          // Deletes the old image
           fs.unlinkSync(oldImage);
         }
       }
