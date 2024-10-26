@@ -3,6 +3,8 @@ Student: Chet Manalo
 
 ## Space Tracker App
 
+When interacting with the app with CURL, be sure to add the "Content-Type: application/json" header for an approriate response.
+
 Endpoints:
 
 - /galaxies
